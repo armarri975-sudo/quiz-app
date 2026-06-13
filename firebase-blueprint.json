@@ -1,0 +1,146 @@
+{
+  "entities": {
+    "Admin": {
+      "title": "Admin",
+      "description": "Admin metadata",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Admin email"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "A quiz subject category",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Subject name"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The UID of the admin who created the subject"
+        }
+      },
+      "required": ["name", "createdAt", "createdBy"]
+    },
+    "Question": {
+      "title": "Question",
+      "description": "Multiple-choice quiz question",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The question prompt"
+        },
+        "options": {
+          "type": "object",
+          "description": "The four options (A, B, C, D)",
+          "properties": {
+            "A": { "type": "string" },
+            "B": { "type": "string" },
+            "C": { "type": "string" },
+            "D": { "type": "string" }
+          },
+          "required": ["A", "B", "C", "D"]
+        },
+        "correctAnswer": {
+          "type": "string",
+          "enum": ["A", "B", "C", "D"],
+          "description": "The correct option (A, B, C, or D)"
+        },
+        "subjectId": {
+          "type": "string",
+          "description": "The ID of the category/subject"
+        },
+        "subjectName": {
+          "type": "string",
+          "description": "The name of the category/subject"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp"
+        },
+        "createdBy": {
+          "type": "string",
+          "description": "The UID of the admin who created the question"
+        }
+      },
+      "required": ["text", "options", "correctAnswer", "subjectId", "subjectName", "createdAt", "createdBy"]
+    },
+    "QuizScore": {
+      "title": "QuizScore",
+      "description": "Student quiz score report card",
+      "type": "object",
+      "properties": {
+        "studentId": {
+          "type": "string",
+          "description": "The firebase auth UID of the student"
+        },
+        "studentName": {
+          "type": "string",
+          "description": "The registered name of the student"
+        },
+        "studentEmail": {
+          "type": "string",
+          "description": "The registered email address of the student"
+        },
+        "subjectName": {
+          "type": "string",
+          "description": "The name of the quiz category"
+        },
+        "score": {
+          "type": "number",
+          "description": "Number of correct answers"
+        },
+        "totalQuestions": {
+          "type": "number",
+          "description": "Total number of played questions"
+        },
+        "percentageScore": {
+          "type": "number",
+          "description": "Final percentage score"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Completion timestamp"
+        }
+      },
+      "required": ["studentId", "studentName", "subjectName", "score", "totalQuestions", "percentageScore", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "List of authorized admin accounts"
+    },
+    "/subjects/{subjectId}": {
+      "schema": "Subject",
+      "description": "List of quiz subjects/topics"
+    },
+    "/questions/{questionId}": {
+      "schema": "Question",
+      "description": "Collection of all quiz questions"
+    },
+    "/scores/{scoreId}": {
+      "schema": "QuizScore",
+      "description": "Database log of student score submissions"
+    }
+  }
+}

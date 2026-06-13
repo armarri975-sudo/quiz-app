@@ -1,0 +1,6 @@
+{
+  "name": "Admin Quiz App",
+  "description": "A clean, simple quiz web application with a secure Firebase Admin Panel to add multiple-choice questions and a user interface for playing the quiz and calculating scores.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

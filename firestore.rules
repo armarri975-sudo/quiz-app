@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net Default-Deny Catch-All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'armarri975@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidAdminDoc(adm) {
+      return adm.email is string && adm.email.size() > 0 &&
+             adm.createdAt == request.time &&
+             adm.keys().hasAll(['email', 'createdAt']) && adm.keys().size() == 2;
+    }
+
+    function isValidSubject(s) {
+      return s.name is string && s.name.size() > 0 && s.name.size() <= 200 &&
+             s.createdBy is string && s.createdBy == request.auth.uid &&
+             s.keys().hasAll(['name', 'createdAt', 'createdBy']) && s.keys().size() == 3;
+    }
+
+    function isValidQuestion(q) {
+      return q.text is string && q.text.size() > 0 && q.text.size() <= 1000 &&
+             q.correctAnswer is string && (q.correctAnswer == 'A' || q.correctAnswer == 'B' || q.correctAnswer == 'C' || q.correctAnswer == 'D') &&
+             q.createdBy is string && q.createdBy == request.auth.uid &&
+             q.subjectId is string && q.subjectId.size() > 0 && q.subjectId.size() <= 128 &&
+             q.subjectName is string && q.subjectName.size() > 0 && q.subjectName.size() <= 200 &&
+             q.options is map &&
+             q.options.A is string && q.options.A.size() > 0 && q.options.A.size() <= 500 &&
+             q.options.B is string && q.options.B.size() > 0 && q.options.B.size() <= 500 &&
+             q.options.C is string && q.options.C.size() > 0 && q.options.C.size() <= 500 &&
+             q.options.D is string && q.options.D.size() > 0 && q.options.D.size() <= 500 &&
+             q.keys().hasAll(['text', 'options', 'correctAnswer', 'subjectId', 'subjectName', 'createdAt', 'createdBy']) &&
+             q.keys().size() == 7;
+    }
+
+    function isValidScore(sc) {
+      return sc.studentId is string && sc.studentId.size() > 0 && sc.studentId == request.auth.uid &&
+             sc.studentName is string && sc.studentName.size() > 0 && sc.studentName.size() <= 200 &&
+             (sc.studentEmail == null || sc.studentEmail is string) &&
+             sc.subjectName is string && sc.subjectName.size() > 0 && sc.subjectName.size() <= 250 &&
+             sc.score is number && sc.score >= 0 && sc.score <= 1000 &&
+             sc.totalQuestions is number && sc.totalQuestions >= 0 && sc.totalQuestions <= 1000 &&
+             sc.percentageScore is number && sc.percentageScore >= 0 && sc.percentageScore <= 100 &&
+             sc.createdAt == request.time &&
+             sc.keys().hasAll(['studentId', 'studentName', 'studentEmail', 'subjectName', 'score', 'totalQuestions', 'percentageScore', 'createdAt']) &&
+             sc.keys().size() == 8;
+    }
+
+    // Match rules for collections
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow create, update: if isAdmin() && isValidId(adminId) && isValidAdminDoc(request.resource.data);
+      allow delete: if isAdmin() && isValidId(adminId);
+    }
+
+    match /subjects/{subjectId} {
+      allow read, list: if true;
+      allow create: if isAdmin() && isValidId(subjectId) && isValidSubject(request.resource.data) && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin() && isValidId(subjectId) && isValidSubject(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin() && isValidId(subjectId);
+    }
+
+    match /questions/{questionId} {
+      allow read, list: if true;
+      allow create: if isAdmin() && isValidId(questionId) && isValidQuestion(request.resource.data) && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin() && isValidId(questionId) && isValidQuestion(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isAdmin() && isValidId(questionId);
+    }
+
+    match /scores/{scoreId} {
+      allow read, list: if isSignedIn() && (isAdmin() || resource.data.studentId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(scoreId) && isValidScore(request.resource.data);
+      allow delete: if isAdmin() && isValidId(scoreId);
+      allow update: if false;
+    }
+  }
+}
